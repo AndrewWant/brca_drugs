@@ -1,3 +1,5 @@
+import pdb
+
 def get_pat_weeks(pid, dx, rx, px=0):
     hb_dx = dx[pid].strip('|').split('|')
     week_to_diags = {}
@@ -32,10 +34,11 @@ def get_diagnosis_weeks(pat_week_info, diagnosis_prefix_list):
 
 def get_rx_BD_AD(pid, dx, rx, diagnosis_prefix_list, redbook, rep):
     first_diag_week = float('inf')
+    #pdb.set_trace()
     for d in dx[pid].strip('|').split('|'):
         dinfo = d.split(':')
-        #if dinfo[0].startswith(diagnosis_prefix_list):
-        if dinfo[0] in diagnosis_prefix_list:
+        if dinfo[0].startswith(diagnosis_prefix_list):
+        #if dinfo[0] in diagnosis_prefix_list:
             first_diag_week = min(int(dinfo[2]), first_diag_week)
     bd = {}
     ad = {}
