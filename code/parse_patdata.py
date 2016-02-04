@@ -3,6 +3,8 @@ import os
 import pandas as pd
 import numpy as np
 import pickle
+def string_id(intid):
+    return '{:0>9}'.format(int(intid))
 
 def get_pat_weeks(pid, dx, rx, px=0):
     hb_dx = dx[pid].strip('|').split('|')
@@ -36,33 +38,94 @@ def get_diagnosis_weeks(pat_week_info, diagnosis_prefix_list):
                 if wd.startswith(diagnosis_prefix_list)]) > 0]
 
 
-def get_pat_diagnosis_age(pid, dx, diagnosis_prefix_list):
-    hb_dx = dx[pid].strip('|').split('|')
-    week_to_diags = {}
-    mnweek
-    for d in hb_dx:
-        dinfo = d.split(':')
-        if dinfo[0].startswith(diagnosis_prefix_list) > 0:
-            int(dinfo[1])
+def pat_dx_age_info(pat_dx,diagnosis_prefixes):
+    ## list of tuple
+    if type(diagnosis_prefixes) == tuple:
+        diagnosis_prefix_list = [diagnosis_prefix_list]
 
-        week_to_diags.setdefault(dinfo[2].strip(), set()).add(dinfo[0].strip())
-    ret = {'d': week_to_diags}
-    
-
-def pat_dx_age_info(pat, dx,diagnosis_prefix_list):
-    first_diag_week = float('inf')
+    #print pat_dx
+    #pdb.set_trace()
     youngest_year = float('inf')
     oldest_year = 0
+    youngest_week = float('inf')
+    oldest_week = 0
+
+    dx_infos = dict([(d, [float('inf')]*2 + [0]*2) for d in diagnosis_prefixes])
+    first_diag_week = float('inf')
     dx_yr = float('inf')
-    for d in dx[pat].strip('|').split('|'):
-        dinfo = d.split(':')
-        if dinfo[0].startswith(diagnosis_prefix_list):
-        #if dinfo[0] in diagnosis_prefix_list:
-            first_diag_week = min(int(dinfo[2]), first_diag_week)
-            dx_yr = min(int(dinfo[1]), dx_yr)
-        youngest_year = min(int(dinfo[1]), youngest_year)
-        oldest_year = max(int(dinfo[1]), oldest_year)
-    return [first_diag_week, dx_yr, youngest_year, oldest_year]
+    if len(pat_dx) > 0: 
+        for d in pat_dx.strip('|').split('|'):
+            dinfo = d.split(':')
+            youngest_year = min(int(dinfo[1]), youngest_year)
+            oldest_year = max(int(dinfo[1]), oldest_year)
+            youngest_week = min(int(dinfo[2]), youngest_week)
+            oldest_week = max(int(dinfo[2]), oldest_week)
+
+            for dx_name in diagnosis_prefixes:
+                if dinfo[0].startswith(diagnosis_prefixes[dx_name]):
+                    # [0 = year, 1 = week]
+
+                    dx_infos[dx_name][0] = min(int(dinfo[1]), dx_infos[dx_name][0]) # young age
+                    dx_infos[dx_name][1] = min(int(dinfo[2]), dx_infos[dx_name][1]) # young week
+                    dx_infos[dx_name][2] = max(int(dinfo[1]), dx_infos[dx_name][2]) # old age
+                    dx_infos[dx_name][3] = max(int(dinfo[2]), dx_infos[dx_name][3]) # old week
+    #pdb.set_trace()
+    return [dx_infos, youngest_year, oldest_year, youngest_week, oldest_week]
+
+def rx2dataframe(pat_rx):
+    pat_rx = pat_rx.strip('|').split('|')
+    #pdb.set_trace()
+    rx_df = pd.DataFrame([[ri.strip() for ri in r.split(":")]
+                          for r in pat_rx if len(r)>0],
+                         columns = ['rx','amt','supply','age','week'])
+    if rx_df.shape[0] > 0:
+        rx_df['rx'] = rx_df['rx'].str.replace("\x00","00")
+        rx_df['week'] = rx_df['week'].map(int)
+        rx_df['age'] = rx_df['age'].map(int)
+        rx_df['supply'] = rx_df['supply'].map(float)
+    return rx_df
+
+
+    
+def rx_df(pat, rx, redbook_dict):
+    drugs = set()
+
+    try:
+        rx_df = rx2dataframe(rx[pat])
+        if rx_df.shape[0] == 0:
+            return rx_df
+
+
+        #print pat + ' w ' + str(len(y))
+        rx_df['gennme'] = ['NA' if drug not in redbook_dict else redbook_dict[drug][0]
+                           for drug in rx_df['rx'] ]
+        rx_df.loc[rx_df['supply'] > 180, 'supply'] = 180  ## as per documentation
+        rx_df = rx_df.loc[rx_df['gennme']!='NA',:]
+        return rx_df
+    except KeyError:
+        print 'rx_df: rx has no key ' + pat
+
+def drugs_before_given_age(pat, rx, old_age_cut,
+                           redbook_dict, young_age_cut):
+    drugs = set()
+    #youngest_age = float('inf')
+    #print '> drugs_before_given_age: ' + pat + ' ' + str(age)
+    try:
+        for r in rx[pat].strip('|').split('|'):
+            if len(r) == 0: continue
+            dinfo = r.split(":")
+            #youngest_age = min(int(dinfo[3]), youngest_age)
+            if int(dinfo[3]) < old_age_cut:
+                if young_age_cut == 0 or int(dinfo[3]) >= young_age_cut:
+                    drug = dinfo[0].strip().replace("\x00","00")
+                    if drug in redbook_dict:
+                        drugs.add(redbook_dict[drug][0])
+    except KeyError:
+        print "!!! drugs_before_given_age: " + pat
+
+    #rint '< drugs_before_given_age: ' + pat                
+    return drugs
+
     
 def drug_pat_ages(pat_id_path, marketscan, redbook, diagnosis_prefix_list, fname, ndo=0):
     #marketscan + '/DX_indices/dis_Hereditary_Breast_Cancer_ids.txt'
