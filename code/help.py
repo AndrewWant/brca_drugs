@@ -48,27 +48,22 @@ def fore2num2(code, bright):
 # ---------------------------------------------
 
 def fore2num(code):
-    
-	if code == 'k':
-		return 30
-	elif code == 'r':
-		return 31
-	elif code == 'g':
-		return 32
-	elif code == 'y':
-		return 33
-	elif code == 'b':
-		return 34
-	elif code == 'm':
-		return 35
-	elif code == 'c':
-		return 36
-	elif code == 'w':
-		return 37
-	else:
+    """Conversion of letter code for colour to numerical value.
+    """
+	code_dict = {"k": 30, 
+				 "r": 31, 
+				 "g": 32, 
+				 "y": 33, 
+				 "b": 34, 
+				 "m": 35, 
+				 "c": 36, 
+				 "w": 37
+				}
+	try:
+		return code_dict[code]
+	except KeyError:
 		print 'Illegal code in *fore2num* !!!'
 		return 0
-
 
 # ------------------------------------------------
 def back2num2(code, bright):
@@ -76,7 +71,7 @@ def back2num2(code, bright):
 	if bright == 0:
 		return back2num(code)
 	else:
-		return back2num(code) + 60
+		return back2num(code) + 6
 
 # -------------------------------------------------
 def rich_string_wrap(
