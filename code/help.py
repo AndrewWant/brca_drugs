@@ -71,7 +71,7 @@ def back2num2(code, bright):
 	if bright == 0:
 		return back2num(code)
 	else:
-		return back2num(code) + 6
+		return back2num(code) + 60
 
 # -------------------------------------------------
 def rich_string_wrap(
