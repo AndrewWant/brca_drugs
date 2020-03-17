@@ -50,15 +50,15 @@ def fore2num2(code, bright):
 def fore2num(code):
     """Conversion of letter code for colour to numerical value.
     """
-	code_dict = {"k": 30, 
-				 "r": 31, 
-				 "g": 32, 
-				 "y": 33, 
-				 "b": 34, 
-				 "m": 35, 
-				 "c": 36, 
-				 "w": 37
-				}
+	code_dict = {"k": 30,
+		     "r": 31,
+		     "g": 32,
+		     "y": 33,
+		     "b": 34,
+		     "m": 35,
+		     "c": 36,
+		     "w": 37
+		    }
 	try:
 		return code_dict[code]
 	except KeyError:
